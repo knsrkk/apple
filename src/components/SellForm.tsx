@@ -22,12 +22,16 @@ import { Toast } from "@/components/Toast";
 import {
   DEVICE_CONDITIONS,
   IPHONE_MODELS,
-  STORAGE_OPTIONS,
   type DeviceCondition,
   type IphoneModel,
 } from "@/lib/constants";
 import { filesToBase64Payload } from "@/lib/files";
-import { calculateEstimatedPrice } from "@/lib/pricing";
+import {
+  calculateEstimatedPrice,
+  formatMemoryGb,
+  formatPriceRub,
+  getMemoriesForModel,
+} from "@/lib/pricing";
 import { playVictorySound } from "@/lib/sound";
 import { sellFormSchema, type SellFormValues } from "@/lib/validation";
 
@@ -46,6 +50,7 @@ export function SellForm() {
     control,
     reset,
     watch,
+    setValue,
     formState: { errors },
   } = useForm<SellFormValues>({
     resolver: zodResolver(sellFormSchema),
@@ -53,7 +58,7 @@ export function SellForm() {
       name: "",
       phone: "",
       model: "iPhone 14",
-      memory: undefined,
+      memoryGb: 128,
       condition: "Отличное",
       telegramUsername: "",
       comment: "",
@@ -61,7 +66,16 @@ export function SellForm() {
   });
 
   const model = watch("model");
+  const memoryGb = watch("memoryGb");
   const condition = watch("condition");
+
+  const memories = getMemoriesForModel(model);
+
+  useEffect(() => {
+    if (memories.length && !memories.includes(memoryGb)) {
+      setValue("memoryGb", memories.includes(128) ? 128 : memories[0]);
+    }
+  }, [model, memories, memoryGb, setValue]);
 
   const revokePreviews = useCallback((urls: string[]) => {
     urls.forEach((url) => URL.revokeObjectURL(url));
@@ -100,7 +114,11 @@ export function SellForm() {
     setToastVisible(false);
 
     try {
-      const estimatedPrice = calculateEstimatedPrice(data.model, data.condition);
+      const estimatedPrice = calculateEstimatedPrice(
+        data.model,
+        data.memoryGb,
+        data.condition,
+      );
       const photos =
         photoFiles.length > 0 ? await filesToBase64Payload(photoFiles) : undefined;
 
@@ -131,8 +149,8 @@ export function SellForm() {
   };
 
   const previewPrice =
-    model && condition
-      ? calculateEstimatedPrice(model, condition as DeviceCondition)
+    model && memoryGb && condition
+      ? calculateEstimatedPrice(model, memoryGb, condition as DeviceCondition)
       : null;
 
   return (
@@ -227,34 +245,33 @@ export function SellForm() {
                   </div>
 
                   <div className="space-y-2">
-                    <Label>
-                      Память{" "}
-                      <span className="text-muted-foreground">(необязательно)</span>
-                    </Label>
+                    <Label>Память *</Label>
                     <Controller
-                      name="memory"
+                      name="memoryGb"
                       control={control}
                       render={({ field }) => (
                         <Select
-                          value={field.value ?? ""}
-                          onValueChange={(v) =>
-                            field.onChange(v === "none" ? undefined : v)
-                          }
+                          value={String(field.value)}
+                          onValueChange={(v) => field.onChange(Number(v))}
                         >
                           <SelectTrigger>
                             <SelectValue placeholder="Выберите объём" />
                           </SelectTrigger>
                           <SelectContent>
-                            <SelectItem value="none">Не указано</SelectItem>
-                            {STORAGE_OPTIONS.map((s) => (
-                              <SelectItem key={s} value={s}>
-                                {s}
+                            {memories.map((gb) => (
+                              <SelectItem key={gb} value={String(gb)}>
+                                {formatMemoryGb(gb)}
                               </SelectItem>
                             ))}
                           </SelectContent>
                         </Select>
                       )}
                     />
+                    {errors.memoryGb && (
+                      <p className="text-sm text-red-400">
+                        {errors.memoryGb.message}
+                      </p>
+                    )}
                   </div>
 
                   <div className="space-y-2">
@@ -293,7 +310,7 @@ export function SellForm() {
                     <div className="rounded-xl border border-accent/25 bg-accent/5 px-4 py-3 text-sm">
                       <span className="text-muted-foreground">Ориентир выкупа: </span>
                       <span className="font-semibold text-accent">
-                        {new Intl.NumberFormat("ru-RU").format(previewPrice)} ₽
+                        {formatPriceRub(previewPrice)}
                       </span>
                     </div>
                   )}

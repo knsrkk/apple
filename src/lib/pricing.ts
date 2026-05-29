@@ -1,30 +1,27 @@
+import type { DeviceCondition } from "./constants";
 import {
-  CONDITION_MULTIPLIERS,
-  PRICE_TABLE,
-  type DeviceCondition,
-} from "./constants";
-
-export function findPriceRowKey(model: string): string {
-  const match = model.match(/iPhone\s+(\d+)/i);
-  if (match) {
-    const key = `iPhone ${match[1]}`;
-    if (PRICE_TABLE[key]) return key;
-  }
-  return "iPhone 13";
-}
+  getMemoriesForModel,
+  getPrice,
+  formatMemoryGb,
+} from "./price-data";
 
 export function calculateEstimatedPrice(
   model: string,
+  memoryGb: number,
   condition: DeviceCondition,
 ): number {
-  const key = findPriceRowKey(model);
-  const row = PRICE_TABLE[key] ?? PRICE_TABLE["iPhone 13"];
-  const multiplier = CONDITION_MULTIPLIERS[condition];
-  return Math.round(row.excellent * multiplier);
+  const price = getPrice(model, memoryGb, condition);
+  if (price !== null) return price;
+
+  const memories = getMemoriesForModel(model);
+  if (memories.length === 0) return 0;
+
+  const fallback = getPrice(model, memories[0], condition);
+  return fallback ?? 0;
 }
 
 export function formatPriceRub(value: number): string {
-  return (
-    new Intl.NumberFormat("ru-RU").format(value) + " ₽"
-  );
+  return new Intl.NumberFormat("ru-RU").format(value) + " ₽";
 }
+
+export { formatMemoryGb, getMemoriesForModel, getPrice };

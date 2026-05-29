@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { formatPriceRub } from "@/lib/pricing";
+import { formatMemoryGb, formatPriceRub } from "@/lib/pricing";
 import { escapeMarkdown } from "@/lib/telegram-markdown";
 import { telegramPayloadSchema } from "@/lib/validation";
 
@@ -12,7 +12,7 @@ interface SummaryData {
   name: string;
   phone: string;
   model: string;
-  memory?: string;
+  memoryGb: number;
   condition: string;
   estimatedPrice: number;
   telegramUsername?: string;
@@ -35,7 +35,7 @@ function buildSummaryMarkdown(data: SummaryData): string {
     "",
     `👤 *Имя:* ${escapeMarkdown(data.name)}`,
     `📲 *Модель:* ${escapeMarkdown(data.model)}`,
-    `💾 *Память:* ${escapeMarkdown(data.memory?.trim() || "—")}`,
+    `💾 *Память:* ${escapeMarkdown(formatMemoryGb(data.memoryGb))}`,
     `🔧 *Состояние:* ${escapeMarkdown(data.condition)}`,
     `💰 *Итоговая цена:* ${escapeMarkdown(formatPriceRub(data.estimatedPrice))}`,
     `📞 *Телефон:* ${escapeMarkdown(data.phone)}`,
@@ -156,7 +156,7 @@ export async function POST(request: NextRequest) {
       name,
       phone,
       model,
-      memory,
+      memoryGb,
       condition,
       comment,
       telegramUsername: rawTg,
@@ -170,7 +170,7 @@ export async function POST(request: NextRequest) {
       name,
       phone,
       model,
-      memory,
+      memoryGb,
       condition,
       estimatedPrice,
       telegramUsername,
