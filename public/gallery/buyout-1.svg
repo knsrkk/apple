@@ -1,0 +1,11 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="800" height="600" viewBox="0 0 800 600">
+  <defs>
+    <linearGradient id="g" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#1a1a1a"/>
+      <stop offset="100%" style="stop-color:#2a2418"/>
+    </linearGradient>
+  </defs>
+  <rect width="800" height="600" fill="url(#g)"/>
+  <text x="400" y="280" fill="#d4af37" font-family="system-ui,sans-serif" font-size="28" text-anchor="middle" font-weight="600">iPhone 14 Pro</text>
+  <text x="400" y="330" fill="#888" font-family="system-ui,sans-serif" font-size="18" text-anchor="middle">0<5=8B5: buyout-1.jpg</text>
+</svg>
